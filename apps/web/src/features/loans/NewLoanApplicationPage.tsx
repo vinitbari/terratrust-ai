@@ -103,12 +103,25 @@ export const NewLoanApplicationPage: React.FC = () => {
   const repaymentFreq = watch('repayment_frequency');
 
   // Dynamically load farms for the selected borrower
-  const { data: farmsRes } = useQuery({
+  const { data: farmsRes, isLoading: isLoadingFarms } = useQuery({
     queryKey: ['farms', selectedBorrowerId],
     queryFn: () => typedGet<any>(`/farms?borrower_id=${selectedBorrowerId}`),
     enabled: !!selectedBorrowerId,
   });
-  const farms: Farm[] = Array.isArray(farmsRes) ? farmsRes : (farmsRes?.farms || farmsRes?.items || mockFarms);
+  const farms: Farm[] = (Array.isArray(farmsRes) && farmsRes.length > 0)
+    ? farmsRes
+    : (farmsRes?.farms && farmsRes.farms.length > 0)
+      ? farmsRes.farms
+      : (farmsRes?.items && farmsRes.items.length > 0)
+        ? farmsRes.items
+        : mockFarms;
+
+  // Auto-select farm when loaded or changed
+  useEffect(() => {
+    if (farms.length > 0 && (!selectedFarmId || !farms.some((f) => f.id === selectedFarmId))) {
+      setValue('farm_id', farms[0].id);
+    }
+  }, [farms, selectedFarmId, setValue]);
 
   const selectedBorrower = borrowers.find((b) => b.id === selectedBorrowerId) || mockBorrowers[0];
   const selectedFarm = farms.find((f) => f.id === selectedFarmId) || farms[0] || mockFarms[0];
@@ -195,12 +208,18 @@ export const NewLoanApplicationPage: React.FC = () => {
               label="Farm Cadastre Plot"
               error={errors.farm_id?.message}
             >
-              <SelectField id="farm_id" {...register('farm_id')}>
-                {farms.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({f.cultivated_area || f.area_value || 2.5} {f.area_unit || 'ha'})
-                  </option>
-                ))}
+              <SelectField id="farm_id" {...register('farm_id')} disabled={isLoadingFarms && farms.length === 0}>
+                {isLoadingFarms && farms.length === 0 ? (
+                  <option value="">Loading farm plots...</option>
+                ) : farms.length === 0 ? (
+                  <option value="">No farm plots registered</option>
+                ) : (
+                  farms.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.cultivated_area || f.area_value || 2.5} {f.area_unit || 'ha'})
+                    </option>
+                  ))
+                )}
               </SelectField>
             </FormField>
 

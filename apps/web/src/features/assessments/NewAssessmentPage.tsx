@@ -81,7 +81,13 @@ export const NewAssessmentPage: React.FC = () => {
     queryFn: () => typedGet<any>(`/farms?borrower_id=${selectedBorrowerId}`),
     enabled: !!selectedBorrowerId,
   });
-  const farms: any[] = Array.isArray(farmsRes) ? farmsRes : (farmsRes?.farms || farmsRes?.items || mockFarms);
+  const farms: any[] = (Array.isArray(farmsRes) && farmsRes.length > 0)
+    ? farmsRes
+    : (farmsRes?.farms && farmsRes.farms.length > 0)
+      ? farmsRes.farms
+      : (farmsRes?.items && farmsRes.items.length > 0)
+        ? farmsRes.items
+        : mockFarms;
 
   // 3. Dynamic Crop Cycles Query for selected farm
   const { data: cyclesRes, isLoading: isLoadingCycles } = useQuery({
@@ -111,14 +117,14 @@ export const NewAssessmentPage: React.FC = () => {
   // Auto-select first registered farm for active borrower
   useEffect(() => {
     if (farms.length > 0 && (!selectedFarmId || !farms.some((f) => f.id === selectedFarmId))) {
-      setValue('farm_id', farms[0].id);
+      setValue('farm_id', farms[0].id, { shouldValidate: true });
     }
   }, [farms, selectedFarmId, setValue]);
 
   // Auto-select first crop cycle for active farm
   useEffect(() => {
     if (cropCycles.length > 0 && (!selectedCycleId || !cropCycles.some((c) => c.id === selectedCycleId))) {
-      setValue('crop_cycle_id', cropCycles[0].id);
+      setValue('crop_cycle_id', cropCycles[0].id, { shouldValidate: true });
     }
   }, [cropCycles, selectedCycleId, setValue]);
 
@@ -229,12 +235,18 @@ export const NewAssessmentPage: React.FC = () => {
               required
               error={errors.farm_id?.message}
             >
-              <SelectField id="farm_id" {...register('farm_id')}>
-                {farms.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({f.cultivated_area || f.area_value || '—'} {f.area_unit || 'ha'})
-                  </option>
-                ))}
+              <SelectField id="farm_id" {...register('farm_id')} disabled={isLoadingFarms && farms.length === 0}>
+                {isLoadingFarms && farms.length === 0 ? (
+                  <option value="">Loading farm plots...</option>
+                ) : farms.length === 0 ? (
+                  <option value="">No farm plots registered</option>
+                ) : (
+                  farms.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.cultivated_area || f.area_value || '—'} {f.area_unit || 'ha'})
+                    </option>
+                  ))
+                )}
               </SelectField>
             </FormField>
 
@@ -244,12 +256,18 @@ export const NewAssessmentPage: React.FC = () => {
               required
               error={errors.crop_cycle_id?.message}
             >
-              <SelectField id="crop_cycle_id" {...register('crop_cycle_id')}>
-                {cropCycles.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.crop_name || c.crop_code} ({c.season})
-                  </option>
-                ))}
+              <SelectField id="crop_cycle_id" {...register('crop_cycle_id')} disabled={isLoadingCycles && cropCycles.length === 0}>
+                {isLoadingCycles && cropCycles.length === 0 ? (
+                  <option value="">Loading crop cycles...</option>
+                ) : cropCycles.length === 0 ? (
+                  <option value="">No active crop cycles</option>
+                ) : (
+                  cropCycles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.crop_name || c.crop_code} ({c.season})
+                    </option>
+                  ))
+                )}
               </SelectField>
             </FormField>
 

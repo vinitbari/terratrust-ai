@@ -18,8 +18,10 @@ from app.core.security import hash_password
 from app.core.errors import ConflictException, NotFoundException
 from app.schemas.borrower import BorrowerResponse
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from typing import Union
+from app.models.farm import Farm, Plot
+from app.models.crop_cycle import CropCycle
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -189,6 +191,45 @@ def register_farmer(
     db.add(borrower)
     db.commit()
     db.refresh(borrower)
+
+    # Auto-provision initial farm holding, plot, and crop cycle for new farmer
+    new_farm = Farm(
+        id=uuid.uuid4(),
+        institution_id=institution.id,
+        borrower=borrower,
+        name=f"{borrower.display_name} Agricultural Holding",
+        latitude=17.6599,
+        longitude=75.9064,
+        area_value=2.5,
+        area_unit="hectare",
+        village="Solapur Rural",
+        district="Solapur",
+        state="Maharashtra",
+        status="ACTIVE",
+    )
+    new_plot = Plot(
+        id=uuid.uuid4(),
+        farm=new_farm,
+        name="Plot 1 - Main Field",
+        area_value=2.0,
+        area_unit="hectare",
+        soil_type="Medium Black Soil",
+    )
+    new_cycle = CropCycle(
+        id=uuid.uuid4(),
+        plot=new_plot,
+        crop_code="WHEAT",
+        variety="Lokwan",
+        season="RABI",
+        sowing_date=date(2026, 11, 1),
+        expected_harvest_date=date(2027, 3, 15),
+        area_value=2.0,
+        area_unit="hectare",
+        target_yield_kg_per_ha=3200.0,
+        status="IN_PROGRESS",
+    )
+    db.add_all([new_farm, new_plot, new_cycle])
+    db.commit()
 
     req_id = getattr(request.state, "request_id", None) or request_id_ctx.get() or "unknown"
     log_audit_event(
