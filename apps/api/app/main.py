@@ -89,6 +89,8 @@ def create_app() -> FastAPI:
     from pathlib import Path
     from fastapi.staticfiles import StaticFiles
     from fastapi.responses import FileResponse
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.responses import Response
 
     dist_dir = Path(__file__).resolve().parent.parent.parent / "web" / "dist"
     if not dist_dir.exists():
@@ -99,15 +101,27 @@ def create_app() -> FastAPI:
         if assets_dir.exists():
             app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-        @app.get("/{full_path:path}", include_in_schema=False)
-        async def serve_spa(full_path: str):
-            if full_path.startswith("api/") or full_path == "predict-yield" or full_path.startswith("predict-yield"):
-                from fastapi import HTTPException
-                raise HTTPException(status_code=404, detail="Not Found")
-            target = dist_dir / full_path
-            if target.is_file():
-                return FileResponse(target)
+        @app.get("/", include_in_schema=False)
+        async def serve_root():
             return FileResponse(dist_dir / "index.html")
+
+        class SPAMiddleware(BaseHTTPMiddleware):
+            async def dispatch(self, request, call_next):
+                response: Response = await call_next(request)
+                if (
+                    response.status_code == 404
+                    and request.method == "GET"
+                    and not request.url.path.startswith("/api")
+                    and not request.url.path.startswith("/predict-yield")
+                    and not request.url.path.startswith("/docs")
+                ):
+                    target = dist_dir / request.url.path.lstrip("/")
+                    if target.is_file():
+                        return FileResponse(target)
+                    return FileResponse(dist_dir / "index.html")
+                return response
+
+        app.add_middleware(SPAMiddleware)
 
     return app
 

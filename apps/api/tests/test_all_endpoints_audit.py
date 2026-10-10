@@ -80,7 +80,7 @@ def test_exhaustive_all_endpoints_audit(seeded_client: TestClient, seeded_db_ses
 
     r_roles = seeded_client.patch(
         f"/api/v1/users/{user_id}/roles",
-        json={"roles": ["LOAN_OFFICER", "RISK_ANALYST"]},
+        json={"roles": ["INSTITUTION_ADMIN", "LOAN_OFFICER", "RISK_ANALYST"]},
         headers=admin_h,
     )
     assert r_roles.status_code == 200
