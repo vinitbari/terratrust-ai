@@ -43,6 +43,7 @@ out/
 Thumbs.db
 .idea/
 .vscode/
+pyrightconfig.json
 *.swp
 *.swo
 .pytest_cache/

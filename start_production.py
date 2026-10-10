@@ -14,6 +14,10 @@ API_DIR = ROOT_DIR / "apps" / "api"
 WEB_DIR = ROOT_DIR / "apps" / "web"
 WEB_DIST = WEB_DIR / "dist"
 
+# Ensure API directory is in Python path for runtime and static tooling
+if str(API_DIR) not in sys.path:
+    sys.path.insert(0, str(API_DIR))
+
 
 def ensure_frontend_built():
     """Verify that frontend assets are compiled, or build them if missing."""
@@ -35,10 +39,11 @@ def run_server():
         os.environ["DATABASE_URL"] = f"sqlite:///{API_DIR / 'fin03.db'}"
 
     # Ensure API directory is in Python path
-    sys.path.insert(0, str(API_DIR))
+    if str(API_DIR) not in sys.path:
+        sys.path.insert(0, str(API_DIR))
 
     import uvicorn
-    from app.main import app
+    from app.main import app  # type: ignore
 
     print(f"\n========================================================")
     print(f">> TerraTrust AI is running live on: http://localhost:{port}")
