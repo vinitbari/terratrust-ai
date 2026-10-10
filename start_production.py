@@ -18,11 +18,11 @@ WEB_DIST = WEB_DIR / "dist"
 def ensure_frontend_built():
     """Verify that frontend assets are compiled, or build them if missing."""
     if not (WEB_DIST / "index.html").exists():
-        print("⚡ [TerraTrust AI] Frontend build not found. Compiling React + Vite...")
+        print("[TerraTrust AI] Frontend build not found. Compiling React + Vite...")
         subprocess.run(["npm", "run", "build", "--workspace=web"], cwd=ROOT_DIR, check=True)
-        print("✅ [TerraTrust AI] Frontend successfully built to apps/web/dist")
+        print("[TerraTrust AI] Frontend successfully built to apps/web/dist")
     else:
-        print("✅ [TerraTrust AI] Frontend production assets ready.")
+        print("[TerraTrust AI] Frontend production assets ready.")
 
 
 def run_server():
@@ -41,10 +41,10 @@ def run_server():
     from app.main import app
 
     print(f"\n========================================================")
-    print(f"🌾 TerraTrust AI is running live on: http://localhost:{port}")
-    print(f"📊 Swagger API Documentation:       http://localhost:{port}/docs")
-    print(f"🤖 AI/ML Yield Inference Endpoint:  http://localhost:{port}/predict-yield")
-    print(f"🔑 Demo Credentials:                 officer@fin03.local / password123")
+    print(f">> TerraTrust AI is running live on: http://localhost:{port}")
+    print(f">> Swagger API Documentation:       http://localhost:{port}/docs")
+    print(f">> AI/ML Yield Inference Endpoint:  http://localhost:{port}/predict-yield")
+    print(f">> Demo Credentials:                 officer@fin03.local / password123")
     print(f"========================================================\n")
 
     uvicorn.run(app, host=host, port=port)
